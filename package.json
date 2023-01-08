@@ -1,0 +1,68 @@
+{
+  "name": "polyline-decode",
+  "version": "1.0.0",
+  "description": "",
+  "types": "./dist/cjs/index.d.ts",
+  "main": "./dist/cjs/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/types/index.d.ts",
+        "default": "./dist/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/cjs/types/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "build": "npm run clean && npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc -p ./configs/tsconfig.esm.json && mv dist/esm/index.js dist/esm/index.mjs",
+    "build:cjs": "tsc -p ./configs/tsconfig.cjs.json",
+    "prepack": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xIsra/polyline-decode.git"
+  },
+  "keywords": [
+    "npm",
+    "javascript",
+    "typescript",
+    "esm",
+    "cjs",
+    "nodejs",
+    "commonjs",
+    "ecmascript",
+    "polyline",
+    "google-maps",
+    "leaflet"
+  ],
+  "author": "xIsra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xIsra/polyline-decode/issues"
+  },
+  "homepage": "https://github.com/xIsra/polyline-decode#readme",
+  "files": [
+    "dist/**/*"
+  ],
+  "release": {
+    "branches": [
+      "main"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "leaflet": "^1.9.3"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4",
+    "@types/leaflet": "^1.9.0"
+  }
+}
