@@ -1,4 +1,4 @@
-import {LatLng, LatLngExpression, LatLngTuple} from "leaflet";
+import {LatLngExpression, LatLngTuple} from "leaflet";
 
 type PolylineConvertOptionsType = {
     precision: number;
@@ -170,12 +170,14 @@ class PolylineConvert {
 }
 
 export function toLatLngTuple(latLng: LatLngExpression): LatLngTuple {
-    if (latLng instanceof Array) {
+    if (isLatLngTuple(latLng)) {
         return [latLng[0], latLng[1]];
-    } else if (latLng instanceof LatLng) {
-        return [latLng.lat, latLng.lng];
     }
     return [latLng.lat, latLng.lng];
+}
+
+export function isLatLngTuple(type: any): type is LatLngTuple {
+    return type instanceof Array;
 }
 
 export default PolylineConvert;
