@@ -1,6 +1,6 @@
 {
   "name": "polyline-decode",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Polyline decoding class based on google's definition",
   "types": "./dist/cjs/index.d.ts",
   "main": "./dist/cjs/index.js",
