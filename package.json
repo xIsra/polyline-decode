@@ -1,6 +1,6 @@
 {
   "name": "polyline-decode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Polyline decoding class based on google's definition",
   "types": "./dist/mjs/types/index.d.ts",
