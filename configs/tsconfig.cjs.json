@@ -4,7 +4,7 @@
     "lib": ["ES6", "DOM"],
     "target": "ES6",
     "module": "CommonJS",
-    "moduleResolution": "Node",
+    "moduleResolution": "Node16",
     "outDir": "../dist/cjs",
     "declarationDir": "../dist/cjs/types"
   }

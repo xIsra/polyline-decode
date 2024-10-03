@@ -1,183 +1,194 @@
-import {LatLngExpression, LatLngTuple} from "leaflet";
-
-type PolylineConvertOptionsType = {
-    precision: number;
-    factor: number;
-    dimension: number;
+export interface LatLngLiteral {
+  lat: number;
+  lng: number;
 }
 
+export type LatLngTuple = [number, number];
+
+export type LatLngExpression = LatLngLiteral | LatLngTuple;
+
+type PolylineConvertOptionsType = {
+  precision: number;
+  factor: number;
+  dimension: number;
+};
+
 class PolylineConvert {
-    private readonly precision: number;
-    private readonly factor: number;
-    private readonly dimension: number;
+  private readonly precision: number;
+  private readonly factor: number;
+  private readonly dimension: number;
 
-    constructor(options?: Partial<PolylineConvertOptionsType>) {
-        this.precision = options?.precision || 5;
-        this.factor = options?.factor || Math.pow(10, this.precision);
-        this.dimension = options?.dimension || 2;
-    }
+  constructor(options?: Partial<PolylineConvertOptionsType>) {
+    this.precision = options?.precision || 5;
+    this.factor = options?.factor || Math.pow(10, this.precision);
+    this.dimension = options?.dimension || 2;
+  }
 
-    public encode(points: LatLngExpression[]) {
-        const flatPoints: number[] = [];
-        for (let i = 0, len = points.length; i < len; ++i) {
-            const point = points[i];
+  public encode(points: LatLngExpression[]): string {
+    const flatPoints: number[] = [];
+    for (let i = 0, len = points.length; i < len; ++i) {
+      const point = points[i];
 
-            if (this.dimension === 2) {
-                flatPoints.push(...toLatLngTuple(point));
-            } else {
-                for (let dim = 0; dim < this.dimension; ++dim) {
-                    flatPoints.push(...toLatLngTuple(point));
-                }
-            }
+      if (this.dimension === 2) {
+        flatPoints.push(...toLatLngTuple(point));
+      } else {
+        for (let dim = 0; dim < this.dimension; ++dim) {
+          flatPoints.push(...toLatLngTuple(point));
         }
-
-        return this.encodeDeltas(flatPoints);
+      }
     }
 
-    public decode(encoded: string): number[][] {
-        const flatPoints = this.decodeDeltas(encoded);
+    return this.encodeDeltas(flatPoints);
+  }
 
-        const points: number[][] = [];
-        for (let i = 0, len = flatPoints.length; i + (this.dimension - 1) < len;) {
-            const point: number[] = [];
+  public decode(encoded: string): number[][] {
+    const flatPoints = this.decodeDeltas(encoded);
 
-            for (let dim = 0; dim < this.dimension; ++dim) {
-                point.push(flatPoints[i++]);
-            }
+    const points: number[][] = [];
+    for (let i = 0, len = flatPoints.length; i + (this.dimension - 1) < len; ) {
+      const point: number[] = [];
 
-            points.push(point);
-        }
+      for (let dim = 0; dim < this.dimension; ++dim) {
+        point.push(flatPoints[i++]);
+      }
 
-        return points;
+      points.push(point);
     }
 
-    private encodeDeltas(numbers: number[]) {
-        const lastNumbers = [];
+    return points;
+  }
 
-        for (let i = 0, len = numbers.length; i < len;) {
-            for (let d = 0; d < this.dimension; ++d, ++i) {
-                const num = +numbers[i].toFixed(this.precision);
-                const delta = num - (lastNumbers[d] || 0);
-                lastNumbers[d] = num;
+  private encodeDeltas(numbers: number[]): string {
+    const lastNumbers: number[] = [];
 
-                numbers[i] = delta;
-            }
-        }
+    for (let i = 0, len = numbers.length; i < len; ) {
+      for (let d = 0; d < this.dimension; ++d, ++i) {
+        const num = +numbers[i].toFixed(this.precision);
+        const delta = num - (lastNumbers[d] || 0);
+        lastNumbers[d] = num;
 
-        return this.encodeFloats(numbers);
+        numbers[i] = delta;
+      }
     }
 
-    private decodeDeltas(encoded: string): number[] {
-        const lastNumbers: number[] = [];
+    return this.encodeFloats(numbers);
+  }
 
-        const numbers = this.decodeFloats(encoded);
-        for (let i = 0, len = numbers.length; i < len;) {
-            for (let d = 0; d < this.dimension; ++d, ++i) {
-                numbers[i] = Math.round((lastNumbers[d] = numbers[i] + (lastNumbers[d] || 0)) * this.factor) / this.factor;
-            }
-        }
+  private decodeDeltas(encoded: string): number[] {
+    const lastNumbers: number[] = [];
 
-        return numbers;
+    const numbers = this.decodeFloats(encoded);
+    for (let i = 0, len = numbers.length; i < len; ) {
+      for (let d = 0; d < this.dimension; ++d, ++i) {
+        numbers[i] =
+          Math.round(
+            (lastNumbers[d] = numbers[i] + (lastNumbers[d] || 0)) * this.factor
+          ) / this.factor;
+      }
     }
 
-    private encodeFloats(numbers: number[]) {
-        for (let i = 0, len = numbers.length; i < len; ++i) {
-            numbers[i] = Math.round(numbers[i] * this.factor);
-        }
+    return numbers;
+  }
 
-        return this.encodeSignedIntegers(numbers);
+  private encodeFloats(numbers: number[]): string {
+    for (let i = 0, len = numbers.length; i < len; ++i) {
+      numbers[i] = Math.round(numbers[i] * this.factor);
     }
 
-    private decodeFloats(encoded: string) {
-        const numbers = this.decodeSignedIntegers(encoded);
-        for (let i = 0, len = numbers.length; i < len; ++i) {
-            numbers[i] /= this.factor;
-        }
+    return this.encodeSignedIntegers(numbers);
+  }
 
-        return numbers;
+  private decodeFloats(encoded: string): number[] {
+    const numbers = this.decodeSignedIntegers(encoded);
+    for (let i = 0, len = numbers.length; i < len; ++i) {
+      numbers[i] /= this.factor;
     }
 
-    private encodeSignedIntegers(numbers: number[]) {
-        for (let i = 0, len = numbers.length; i < len; ++i) {
-            const num = numbers[i];
-            numbers[i] = (num < 0) ? ~(num << 1) : (num << 1);
-        }
+    return numbers;
+  }
 
-        return this.encodeUnsignedIntegers(numbers);
+  private encodeSignedIntegers(numbers: number[]): string {
+    for (let i = 0, len = numbers.length; i < len; ++i) {
+      const num = numbers[i];
+      numbers[i] = num < 0 ? ~(num << 1) : num << 1;
     }
 
-    private decodeSignedIntegers(encoded: string) {
-        const numbers = this.decodeUnsignedIntegers(encoded);
+    return this.encodeUnsignedIntegers(numbers);
+  }
 
-        for (let i = 0, len = numbers.length; i < len; ++i) {
-            const num = numbers[i];
-            numbers[i] = (num & 1) ? ~(num >> 1) : (num >> 1);
-        }
+  private decodeSignedIntegers(encoded: string): number[] {
+    const numbers = this.decodeUnsignedIntegers(encoded);
 
-        return numbers;
+    for (let i = 0, len = numbers.length; i < len; ++i) {
+      const num = numbers[i];
+      numbers[i] = num & 1 ? ~(num >> 1) : num >> 1;
     }
 
-    private encodeUnsignedIntegers(numbers: number[]) {
-        let encoded = '';
-        for (let i = 0, len = numbers.length; i < len; ++i) {
-            encoded += this.encodeUnsignedInteger(numbers[i]);
-        }
-        return encoded;
+    return numbers;
+  }
+
+  private encodeUnsignedIntegers(numbers: number[]): string {
+    let encoded = "";
+    for (let i = 0, len = numbers.length; i < len; ++i) {
+      encoded += this.encodeUnsignedInteger(numbers[i]);
+    }
+    return encoded;
+  }
+
+  private decodeUnsignedIntegers(encoded: string) {
+    const numbers: number[] = [];
+
+    let current = 0;
+    let shift = 0;
+
+    for (let i = 0, len = encoded.length; i < len; ++i) {
+      const b = encoded.charCodeAt(i) - 63;
+
+      current |= (b & 0x1f) << shift;
+
+      if (b < 0x20) {
+        numbers.push(current);
+        current = 0;
+        shift = 0;
+      } else {
+        shift += 5;
+      }
     }
 
-    private decodeUnsignedIntegers(encoded: string) {
-        const numbers = [];
+    return numbers;
+  }
 
-        let current = 0;
-        let shift = 0;
+  private encodeSignedInteger(num: number) {
+    num = num < 0 ? ~(num << 1) : num << 1;
+    return this.encodeUnsignedInteger(num);
+  }
 
-        for (let i = 0, len = encoded.length; i < len; ++i) {
-            const b = encoded.charCodeAt(i) - 63;
-
-            current |= (b & 0x1f) << shift;
-
-            if (b < 0x20) {
-                numbers.push(current);
-                current = 0;
-                shift = 0;
-            } else {
-                shift += 5;
-            }
-        }
-
-        return numbers;
+  // This  is very similar to Google's, but I added
+  // some stuff to deal with the double slash issue.
+  private encodeUnsignedInteger(num: number) {
+    let value,
+      encoded = "";
+    while (num >= 0x20) {
+      value = (0x20 | (num & 0x1f)) + 63;
+      encoded += String.fromCharCode(value);
+      num >>= 5;
     }
+    value = num + 63;
+    encoded += String.fromCharCode(value);
 
-    private encodeSignedInteger(num: number) {
-        num = (num < 0) ? ~(num << 1) : (num << 1);
-        return this.encodeUnsignedInteger(num);
-    }
-
-    // This  is very similar to Google's, but I added
-    // some stuff to deal with the double slash issue.
-    private encodeUnsignedInteger(num: number) {
-        let value, encoded = '';
-        while (num >= 0x20) {
-            value = (0x20 | (num & 0x1f)) + 63;
-            encoded += (String.fromCharCode(value));
-            num >>= 5;
-        }
-        value = num + 63;
-        encoded += (String.fromCharCode(value));
-
-        return encoded;
-    }
+    return encoded;
+  }
 }
 
 export function toLatLngTuple(latLng: LatLngExpression): LatLngTuple {
-    if (isLatLngTuple(latLng)) {
-        return [latLng[0], latLng[1]];
-    }
-    return [latLng.lat, latLng.lng];
+  if (isLatLngTuple(latLng)) {
+    return [latLng[0], latLng[1]];
+  }
+  return [latLng.lat, latLng.lng];
 }
 
 export function isLatLngTuple(type: any): type is LatLngTuple {
-    return type instanceof Array;
+  return type instanceof Array;
 }
 
 export default PolylineConvert;
